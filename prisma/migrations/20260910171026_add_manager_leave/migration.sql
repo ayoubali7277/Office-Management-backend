@@ -1,11 +1,11 @@
 -- DropForeignKey
-ALTER TABLE `leave` DROP FOREIGN KEY `Leave_employeeId_fkey`;
+ALTER TABLE `Leave` DROP FOREIGN KEY `Leave_employeeId_fkey`;
 
 -- DropIndex
-DROP INDEX `Leave_employeeId_fkey` ON `leave`;
+DROP INDEX `Leave_employeeId_fkey` ON `Leave`;
 
 -- AlterTable
-ALTER TABLE `leave` ADD COLUMN `managerId` INTEGER NULL,
+ALTER TABLE `Leave` ADD COLUMN `managerId` INTEGER NULL,
     MODIFY `employeeId` INTEGER NULL;
 
 -- AddForeignKey
