@@ -5,5 +5,5 @@
 
 */
 -- AlterTable
-ALTER TABLE `platformsetting` DROP COLUMN `allowRegistartions`,
+ALTER TABLE `PlatformSetting` DROP COLUMN `allowRegistartions`,
     ADD COLUMN `allowRegistrations` BOOLEAN NOT NULL DEFAULT true;
