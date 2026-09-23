@@ -22,7 +22,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN,
+    origin:"https://office-management-frontend-production.up.railway.app",
     credentials: true,
   })
 );
