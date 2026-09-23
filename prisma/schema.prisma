@@ -1,0 +1,271 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless and edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  timezone  String?
+  address   String?
+  status    OrganizationStatus @default(PENDING)
+  createdAt DateTime @default(now())
+
+  users       User[]
+  departments Department[]
+  activities  Activity[]
+}
+
+model PlatformSetting {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  email              String
+  maintenanceMode    Boolean  @default(false)
+  allowRegistrations Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+enum OrganizationStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  REJECTED
+}
+
+enum Role {
+  SUPER_ADMIN
+  ORGANIZATION_ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+}
+
+enum Leavetype {
+  CASUAL
+  SICK
+  ANNUAL
+  EMERGENCY
+  OTHER
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum PayrollStatus {
+  PENDING
+  PAID
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum NotificationType {
+  LEAVE
+  TASK
+  PAYROLL
+  GENERAL
+}
+
+model Activity {
+  id         Int      @id @default(autoincrement())
+  message    String
+  createdAt  DateTime @default(now())
+
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(EMPLOYEE)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  salary Float?
+
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  resetTokenHash   String?
+  resetTokenExpiry DateTime?
+
+  employee Employee?
+
+  managedDepartment Department? @relation("DepartmentManager")
+
+  managerAttendances ManagerAttendance[]
+
+  payrolls Payroll[]
+
+  sentNotifications     Notification[] @relation("SentNotifications")
+  receivedNotifications Notification[] @relation("ReceivedNotifications")
+
+  approvedLeaves Leave[] @relation("LeaveApprover")
+  managerLeaves  Leave[] @relation("ManagerLeaves")
+
+  assignedTasks Task[] @relation("TaskAssigner")
+}
+
+model Department {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  managerId Int? @unique
+  manager   User? @relation("DepartmentManager", fields: [managerId], references: [id])
+
+  employees Employee[]
+}
+
+model Employee {
+  id          Int            @id @default(autoincrement())
+  name        String
+  email       String         @unique
+  phone       String
+  joiningDate DateTime
+  status      EmployeeStatus @default(ACTIVE)
+  createdAt   DateTime       @default(now())
+
+  salary Float?
+
+  departmentId Int
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id])
+
+  attendances Attendance[]
+  leaves      Leave[]
+  tasks       Task[]
+  payrolls    Payroll[]
+}
+
+model Attendance {
+  id        Int              @id @default(autoincrement())
+  date      DateTime
+  checkIn   DateTime?
+  checkOut  DateTime?
+  status    AttendanceStatus
+  createdAt DateTime         @default(now())
+
+  employeeId Int
+  employee   Employee @relation(fields: [employeeId], references: [id])
+}
+
+model ManagerAttendance {
+  id        Int              @id @default(autoincrement())
+  date      DateTime
+  checkIn   DateTime?
+  checkOut  DateTime?
+  status    AttendanceStatus
+  createdAt DateTime         @default(now())
+
+  managerId Int
+  manager   User @relation(fields: [managerId], references: [id])
+
+  @@unique([managerId, date])
+}
+
+model Leave {
+  id        Int         @id @default(autoincrement())
+  startDate DateTime
+  endDate   DateTime
+  type      Leavetype
+  reason    String
+  status    LeaveStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+
+  employeeId Int?
+  employee   Employee? @relation(fields: [employeeId], references: [id])
+
+  managerId Int?
+  manager   User? @relation("ManagerLeaves", fields: [managerId], references: [id])
+
+  approvedById Int?
+  approvedBy   User? @relation("LeaveApprover", fields: [approvedById], references: [id])
+}
+
+model Task {
+  id          Int          @id @default(autoincrement())
+  title       String
+  description String?
+  dueDate     DateTime?
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  createdAt   DateTime     @default(now())
+
+  employeeId Int
+  employee   Employee @relation(fields: [employeeId], references: [id])
+
+  assignedById Int?
+  assignedBy   User? @relation("TaskAssigner", fields: [assignedById], references: [id])
+}
+
+model Payroll {
+  id          Int           @id @default(autoincrement())
+  month       String
+  salary      Float
+  paymentDate DateTime?
+  status      PayrollStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+
+  employeeId Int?
+  employee   Employee? @relation(fields: [employeeId], references: [id])
+
+  managerId Int?
+  manager   User? @relation(fields: [managerId], references: [id])
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  message   String
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  senderId   Int
+  receiverId Int
+
+  sender   User @relation("SentNotifications", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedNotifications", fields: [receiverId], references: [id])
+}
