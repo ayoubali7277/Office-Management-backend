@@ -1,11 +1,11 @@
 -- DropForeignKey
-ALTER TABLE `payroll` DROP FOREIGN KEY `Payroll_employeeId_fkey`;
+ALTER TABLE `Payroll` DROP FOREIGN KEY `Payroll_employeeId_fkey`;
 
 -- DropIndex
-DROP INDEX `Payroll_employeeId_fkey` ON `payroll`;
+DROP INDEX `Payroll_employeeId_fkey` ON `Payroll`;
 
 -- AlterTable
-ALTER TABLE `payroll` ADD COLUMN `managerId` INTEGER NULL,
+ALTER TABLE `Payroll` ADD COLUMN `managerId` INTEGER NULL,
     MODIFY `employeeId` INTEGER NULL;
 
 -- AddForeignKey
